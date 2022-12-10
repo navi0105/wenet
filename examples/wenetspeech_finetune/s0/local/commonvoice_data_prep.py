@@ -37,13 +37,13 @@ def data_prep(data_dir, clips_dir, output_dir, split):
             for audio in audio_path_list:
                 audio = os.path.splitext(audio)
                 utterance = audio[0]
-                audio = clips_dir / (audio[0] + ".wav")
+                audio = clips_dir / (audio[0] + ".mp3")
                 f.write(f"{utterance} {audio}\n")
 
 def main():
     args = parse_args()
     data_dir = args.data_dir
-    clips_dir = data_dir / "clips_wav"
+    clips_dir = data_dir / "clips"
     output_dir = args.output_dir
     split = args.split
 
