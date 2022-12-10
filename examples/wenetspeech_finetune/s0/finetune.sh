@@ -38,6 +38,8 @@ data_type=raw
 num_utts_per_shard=1000
 
 train_set=train
+dev_set=dev
+test_set=test
 # Optional train_config
 # 1. conf/train_transformer.yaml: Standard transformer
 # 2. conf/train_conformer.yaml: Standard conformer
@@ -45,16 +47,17 @@ train_set=train
 # 4. conf/train_unified_transformer.yaml: Unified dynamic chunk transformer
 # 5. conf/train_u2++_conformer.yaml: U2++ conformer
 # 6. conf/train_u2++_transformer.yaml: U2++ transformer
-train_config=conf/train_conformer.yaml
+checkpoint_dir=20220506_u2pp_conformer_exp
+train_config=${checkpoint_dir}/train.yaml
 cmvn=true
 dir=exp/conformer
-checkpoint=20220506_u2pp_conformer_exp/final.pt
-checkpoint_dict=20220506_u2pp_conformer_exp/units.txt
+checkpoint=${checkpoint_dir}/final.pt
+checkpoint_dict=${checkpoint_dir}/units.txt
 
 # use average_checkpoint will get better result
 average_checkpoint=true
 decode_checkpoint=$dir/final.pt
-average_num=30
+average_num=10
 decode_modes="attention_rescoring ctc_greedy_search"
 
 . tools/parse_options.sh || exit 1;
@@ -167,7 +170,7 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
   decoding_chunk_size=
   ctc_weight=0.5
   reverse_weight=0.0
-  for testset in ${test_sets} ${dev_set}; do
+  for testset in ${test_set} ${dev_set}; do
   {
     for mode in ${decode_modes}; do
     {
@@ -177,13 +180,13 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
       python wenet/bin/recognize.py --gpu 0 \
         --mode $mode \
         --config $dir/train.yaml \
-        --data_type "shard" \
+        --data_type "raw" \
         --test_data data/$testset/data.list \
         --checkpoint $decode_checkpoint \
         --beam_size 10 \
         --batch_size 1 \
         --penalty 0.0 \
-        --dict $dict \
+        --dict $checkpoint_dict \
         --ctc_weight $ctc_weight \
         --reverse_weight $reverse_weight \
         --result_file $result_dir/text \
