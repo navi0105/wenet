@@ -5,7 +5,7 @@
 
 # Use this to control how many gpu you use, It's 1-gpu training if you specify
 # just 1gpu, otherwise it's is multiple gpu training based on DDP in pytorch
-export CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7"
+export CUDA_VISIBLE_DEVICES="0"
 # The NCCL_SOCKET_IFNAME variable specifies which IP interface to use for nccl
 # communication. More details can be found in
 # https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/env.html
@@ -25,7 +25,7 @@ node_rank=0
 # The aishell dataset location, please change this to your own path
 # make sure of using absolute path. DO-NOT-USE relatvie path!
 # data=/export/data/asr-data/OpenSLR/33/
-data=/hdd/dataset/aishell
+data=/hdd/dataset/commonvoice_zh-tw/cv-corpus-11.0-2022-09-21/zh-TW
 data_url=www.openslr.org/resources/33
 
 nj=16
@@ -66,21 +66,14 @@ fi
 
 if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
   # Data preparation
-  local/aishell_data_prep.sh ${data}/data_aishell/wav \
-    ${data}/data_aishell/transcript
+  python3 local/commonvoice_data_prep.py \
+    --data_dir ${data} \
+    --output_dir data \
+    --split train dev test
 fi
 
 
 if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
-  # remove the space between the text labels for Mandarin dataset
-  for x in train dev test; do
-    cp data/${x}/text data/${x}/text.org
-    paste -d " " <(cut -f 1 -d" " data/${x}/text.org) \
-      <(cut -f 2- -d" " data/${x}/text.org | tr -d " ") \
-      > data/${x}/text
-    rm data/${x}/text.org
-  done
-
   tools/compute_cmvn_stats.py --num_workers 16 --train_config $train_config \
     --in_scp data/${train_set}/wav.scp \
     --out_cmvn data/$train_set/global_cmvn
